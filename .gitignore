@@ -1,3 +1,4 @@
 gitdex
 *.o
 test
+index-format.txt
