@@ -2,7 +2,7 @@ OBJS=main.o
 
 LIBS=
 FLAGS=-Wall -I.
-DEPS=gitdex-util.h
+DEPS=util.h
 TARGET=gitdex
 
 all: $(TARGET)

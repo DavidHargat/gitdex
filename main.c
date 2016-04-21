@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "gitdex-util.h"
+#include "util.h"
 
 // Constants for masking (&) 'mode' fields.
 #define MODE_TYPE 0xF0000000
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]){
 	size_t len;
 	uint8_t buffer[1024 * 2];
 	
-	if( !(len=file_buffer("alpha/.git/index", buffer, 1024 * 2)) )
+	if( !(len=file_buffer("test.index", buffer, 1024 * 2)) )
 		die("failed to open file");
 
 	gitdex_parse(buffer, len);
