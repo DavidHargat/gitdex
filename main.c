@@ -5,12 +5,6 @@
 
 #include "util.h"
 
-// Constants for masking (&) 'mode' fields.
-#define MODE_TYPE 0xF0000000
-#define MODE_UNIX 0b00000000000000000000000111111111
-#define MODE_TYPE_SHIFT 24
-#define MODE_UNIX_SHIFT 16
-
 // Constants for masking 'flag' fields.
 #define FLAG_VALID     (1 << 16)
 #define FLAG_EXTENDED  (1 << 15)
@@ -21,7 +15,7 @@
 #define FLAG_ALL     (FLAG_VALID | FLAG_EXTENDED | FLAG_STAGE)
 
 // Permissions are coerced into 0755 or 0644
-#define ce_permissions(mode) (((mode) & 0100) ? 0755 : 0644)
+#define PERM(mode) (((mode) & 0100) ? 0755 : 0644)
 
 // File Header
 typedef struct {
@@ -89,7 +83,7 @@ void print_entry(entry_t *entry){
 	//char temp[64];
 	size_t i;
 
-	printf("%06o %s\n", ce_permissions(entry->mode), entry->name);
+	printf("%06o %s\n", PERM(entry->mode), entry->name);
 	printf("  ctime: %d:%d\n", read_uint32(entry->ctime_second), read_uint32(entry->ctime_nanosecond));
 	printf("  mtime: %d:%d\n", read_uint32(entry->mtime_second), read_uint32(entry->mtime_nanosecond));
 	
