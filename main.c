@@ -7,15 +7,21 @@
 
 // Constants for masking (&) 'mode' fields.
 #define MODE_TYPE 0xF0000000
-#define MODE_UNIX 0x1FF00000
+#define MODE_UNIX 0b00000000000000000000000111111111
 #define MODE_TYPE_SHIFT 24
 #define MODE_UNIX_SHIFT 16
 
 // Constants for masking 'flag' fields.
-#define FLAG_VALID    0x8000
-#define FLAG_EXTENDED 0x4000
-#define FLAG_STAGE    0x3000
-#define FLAG_NAME     0x0FFF
+#define FLAG_VALID     (1 << 16)
+#define FLAG_EXTENDED  (1 << 15)
+#define FLAG_STAGE    ((1 << 14) | (1 << 13))
+#define FLAG_NAME      (0x0FFF)
+
+// Excludes the flag name field
+#define FLAG_ALL     (FLAG_VALID | FLAG_EXTENDED | FLAG_STAGE)
+
+// Permissions are coerced into 0755 or 0644
+#define ce_permissions(mode) (((mode) & 0100) ? 0755 : 0644)
 
 // File Header
 typedef struct {
@@ -32,13 +38,16 @@ typedef struct {
 	uint8_t mtime_nanosecond[4];
 	uint8_t dev[4];
 	uint8_t ino[4];
-	uint8_t mode[4];
+	
+	uint32_t mode;
 	
 	uint8_t uid[4];
 	uint8_t gid[4];
 	uint8_t size[4];
+	
 	uint8_t sha1[20];
-	uint8_t flags[2];
+	
+	uint16_t flags;
 	
 	char name[1];
 } entry_t;
@@ -50,6 +59,14 @@ uint32_t read_uint32(uint8_t *src){
 	value += (src[2]) << 8;
 	value += (src[1]) << 16;
 	value += (src[0]) << 24;
+	return value;
+}
+
+uint16_t read_uint16(uint8_t *src){
+	uint16_t value;
+	value = 0;
+	value += (src[1]);
+	value += (src[0]) << 8;
 	return value;
 }
 
@@ -72,41 +89,54 @@ void print_entry(entry_t *entry){
 	//char temp[64];
 	size_t i;
 
-	printf("%s\n",entry->name);
-	printf("  ctime second: %d:%d\n", read_uint32(entry->ctime_second), read_uint32(entry->ctime_nanosecond));
-	printf("  mtime second: %d:%d\n", read_uint32(entry->mtime_second), read_uint32(entry->mtime_nanosecond));
+	printf("%06o %s\n", ce_permissions(entry->mode), entry->name);
+	printf("  ctime: %d:%d\n", read_uint32(entry->ctime_second), read_uint32(entry->ctime_nanosecond));
+	printf("  mtime: %d:%d\n", read_uint32(entry->mtime_second), read_uint32(entry->mtime_nanosecond));
 	
-	printf("  dev: %d\t ino: %d\n", read_uint32(entry->dev), read_uint32(entry->ino));	
-	printf("  uid: %d\t gid: %d\n", read_uint32(entry->uid), read_uint32(entry->gid));
+	printf("  dev: %d\tino: %d\n", read_uint32(entry->dev), read_uint32(entry->ino));	
+	printf("  uid: %d\tgid: %d\n", read_uint32(entry->uid), read_uint32(entry->gid));
 
-	printf("  size: %d\n", read_uint32(entry->size));
+	printf("  size: %d\tflags: %x\n", read_uint32(entry->size), (entry->flags & FLAG_ALL));
 	
 	printf("%s","  SHA-1: ");
 	for(i=0; i<20; i++)
 		printf("%02x", entry->sha1[i]);
+	printf("%s","\n");
+	
 	printf("%s","\n");
 }
 
 void gitdex_parse(uint8_t *buf, size_t len){
 	header_t *header;
 	entry_t  *entry;
+	size_t offset, i, entries, version;
 
-	header = (header_t *)(buf);	
-	entry = (entry_t *)(((uint8_t *)header) + sizeof(header_t));
-	
+	header  = (header_t *)(buf);	
+	entries = read_uint32(header->entries);
+	version = read_uint32(header->version);
+
 	printf("\nsignature: %.*s\n", 4, header->DIRC);
-	printf("version:       %d\n", read_uint32(header->version));
-	printf("entries:       %d\n\n", read_uint32(header->entries));
+	printf("version:       %lu\n",    version);
+	printf("entries:       %lu\n\n",  entries);
+
+	offset = sizeof(header_t);
 	
-	print_entry(entry);
+	for(i = 0; i < entries; i++){
+		entry = buf + offset;
+		
+		print_entry(entry);
+		
+		// Offset for the padded nul-bytes. (index-format.txt:126)
+		offset += sizeof(entry_t) + strlen(entry->name);
+		offset += (offset % 8);
+	}
 }
 
 int main(int argc, char *argv[]){
-	
 	size_t len;
 	uint8_t buffer[1024 * 2];
 	
-	if( !(len=file_buffer("./alpha/.git/index", buffer, 1024 * 2)) )
+	if( !(len=file_buffer("alpha/.git/index", buffer, 1024 * 2)) )
 		die("failed to open file");
 
 	gitdex_parse(buffer, len);
