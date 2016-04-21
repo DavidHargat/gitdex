@@ -17,8 +17,8 @@ clean:
 	rm $(TARGET)
 .PHONY: clean
 
-$(TARGET): $(OBJS) $(DEPS)
+$(TARGET): $(OBJS)
 	gcc $(FLAGS) -o $@ $< $(LIBS)
 
-%.o: %.c
-	gcc $(FLAGS) -c -o $@ $^
+%.o: %.c $(DEPS)
+	gcc $(FLAGS) -c -o $@ $<
