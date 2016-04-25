@@ -47,9 +47,15 @@ void example_stack(void *data, size_t len){
 int main(int argc, char **argv){
 	size_t len;
 	unsigned char data[MAX_SIZE];
+	char *filename;
+	
+	if(argc > 1)
+		filename = argv[1];
+	else
+		filename = ".git/index";
 
 	// Reads a file to a buffer
-	if( !(len=file_buffer(".git/index", data, MAX_SIZE)) )
+	if( !(len=file_buffer(filename, data, MAX_SIZE)) )
 		die("failed to open file");
 
 	// Each example reads from the buffer into an `index_t` and prints it.
