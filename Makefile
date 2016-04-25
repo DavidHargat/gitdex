@@ -1,24 +1,16 @@
-OBJS=main.o
-
-LIBS=
 FLAGS=-Wall -I.
-DEPS=util.h
-TARGET=gitdex
+DEPS=util.h gitdex.h
 
-all: $(TARGET)
+all: demo
 .PHONY: all
 
-run: $(TARGET)
-	./$(TARGET)
-.PHONY: run
+run: demo
+	./demo
+
+demo: demo.c $(DEPS)
+	gcc $(FLAGS) $< -o $@
 
 clean:
 	rm *.o
-	rm $(TARGET)
+	rm ./demo
 .PHONY: clean
-
-$(TARGET): $(OBJS)
-	gcc $(FLAGS) -o $@ $< $(LIBS)
-
-%.o: %.c $(DEPS)
-	gcc $(FLAGS) -c -o $@ $<

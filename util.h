@@ -57,16 +57,6 @@ size_t file_buffer(char *filename, void *dest, size_t max){
 	return len;
 }
 
-size_t strlen(char *src){
-	size_t len;
-	len = 0;
-
-	while( src[len] != 0 )
-		len++;
-
-	return len;		
-}
-
 void die(char *reason){
 	printf("%s\n", reason);
 	exit(EXIT_FAILURE);
