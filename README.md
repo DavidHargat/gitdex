@@ -1,13 +1,13 @@
-# gitdex
+# gitdex.h
 
 a `.git/index` file parser, 
 as specified in [Git's technical documentation](https://github.com/git/git/blob/master/Documentation/technical/index-format.txt)
 
 # example
 
-see `demo.c` for an example of usage.
+`demo.c` see for example of usage.
 
 # run
 
-run `make run-demo` to see an example of output.
+`make run` to see an example of output.
 
