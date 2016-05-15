@@ -20,7 +20,7 @@ typedef struct {
 	char signature[4];
 	uint32_t version;
 	uint32_t entries;
-} header_t;
+} gitdex_header_t;
 
 typedef struct {
 	uint32_t ctime_second;
@@ -37,40 +37,44 @@ typedef struct {
 	uint16_t flags;
 	uint16_t extended;
 	char name[NAME_MAX];
-} entry_t;
+} gitdex_entry_t;
 
 typedef struct {
-	header_t *header;
-	entry_t  *entries;
-} index_t;
+	gitdex_header_t header;
+	gitdex_entry_t  *entries;
+} gitdex_t;
 
-index_t *gitdex_alloc(void *src, size_t size);
-void     gitdex_free(index_t *index);
-size_t   gitdex_read_index(index_t *dest, void *src, size_t size);
-size_t   gitdex_read_header(header_t *dest, void *src);
-size_t   gitdex_read_entry(entry_t *dest, void *src);
+gitdex_t *gitdex_alloc(void *src, size_t size);
+void     gitdex_free(gitdex_t *index);
+size_t   gitdex_read_index(gitdex_t *dest, void *src, size_t size);
+size_t   gitdex_read_header(gitdex_header_t *dest, void *src);
+size_t   gitdex_read_entry(gitdex_entry_t *dest, void *src);
+int      gitdex_check(void *src);
 
-void gitdex_print_index(index_t *index);
-void gitdex_print_entry(entry_t *entry);
-void gitdex_print_header(header_t *header);
+void gitdex_print_index(gitdex_t *index);
+void gitdex_print_entry(gitdex_entry_t *entry);
+void gitdex_print_header(gitdex_header_t *header);
 
-index_t *gitdex_alloc(void *src, size_t size){
-	index_t *index;
+// Checks the file signature (first four bytes).
+int gitdex_check(void *src){
+	return strncmp(src, "DIRC", 4) == 0;
+}
 
-	index         = malloc(sizeof(index_t));
-	index->header = malloc(sizeof(header_t));
+gitdex_t *gitdex_alloc(void *src, size_t size){
+	gitdex_t *index;
+
+	index = malloc(sizeof(gitdex_t));
 	
-	gitdex_read_header(index->header, src);
+	gitdex_read_header(&index->header, src);
 	
-	index->entries = malloc(sizeof(entry_t) * index->header->entries);
+	index->entries = malloc(sizeof(gitdex_entry_t) * index->header.entries);
 
 	gitdex_read_index(index, src, size);
 
 	return index;
 }
 
-void gitdex_free(index_t *index){
-	free(index->header);
+void gitdex_free(gitdex_t *index){
 	free(index->entries);
 	free(index);
 }
@@ -83,18 +87,18 @@ uint16_t gitdex_read_uint16(uint16_t *src){
 	return ntohs(*src);
 }
 
-size_t gitdex_read_index(index_t *dest, void *src, size_t size){
+size_t gitdex_read_index(gitdex_t *dest, void *src, size_t size){
 	size_t i, offset;
 	offset=0;
 	
-	offset += gitdex_read_header(dest->header, src);
-	for(i=0; i < (dest->header->entries); i++)
+	offset += gitdex_read_header(&dest->header, src);
+	for(i=0; i < (dest->header.entries); i++)
 		offset += gitdex_read_entry( &dest->entries[i], src+offset);
 	
 	return offset;
 }
 
-size_t gitdex_read_header(header_t *dest, void *src){
+size_t gitdex_read_header(gitdex_header_t *dest, void *src){
 	size_t offset;
 	offset = 0;
 	memcpy(dest->signature, src + offset, 4);
@@ -107,7 +111,7 @@ size_t gitdex_read_header(header_t *dest, void *src){
 }
 
 // Returns the size of the entry.
-size_t gitdex_read_entry(entry_t *dest, void *src){
+size_t gitdex_read_entry(gitdex_entry_t *dest, void *src){
 	size_t offset;
 	size_t namelen;
 	offset = 0;
@@ -150,20 +154,20 @@ size_t gitdex_read_entry(entry_t *dest, void *src){
 	return offset;
 }
 
-void gitdex_print_index(index_t *index){
+void gitdex_print_index(gitdex_t *index){
 	size_t i;
-	gitdex_print_header(index->header);
-	for(i=0; i < (index->header->entries); i++)
+	gitdex_print_header(&index->header);
+	for(i=0; i < (index->header.entries); i++)
 		gitdex_print_entry(&index->entries[i]);
 }
 
-void gitdex_print_header(header_t *header){
+void gitdex_print_header(gitdex_header_t *header){
 	printf("signature: %.4s\n", header->signature);
 	printf("version:   %u\n",  header->version);
 	printf("entries:   %u\n",  header->entries);
 }
 
-void gitdex_print_entry(entry_t *entry){
+void gitdex_print_entry(gitdex_entry_t *entry){
 	size_t i;
 	printf("%s\n", entry->name);
 	printf("  mode: %06o\n", entry->mode);
@@ -173,7 +177,8 @@ void gitdex_print_entry(entry_t *entry){
 	printf("  uid: %d\tgid: %d\n", entry->uid, entry->gid);
 	printf("  size: %d\tflags: %d\n", entry->size, entry->flags & FLAG_ALL);
 	printf("%s","  SHA-1: ");
-	for(i=0; i<20; i++) printf("%02x", entry->sha1[i]);
+	for(i=0; i<20; i++)
+		printf("%02x", entry->sha1[i]);
 	printf("%s","\n");
 }
 

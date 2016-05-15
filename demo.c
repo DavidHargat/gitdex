@@ -17,50 +17,60 @@
  *   `size` is a file length.
  *
  * In either case gitdex will parse your buffered file into a struct
- * defined as index_t where you will have access to the header and entries.
+ * defined as gitdex_t where you will have access to the header and entries.
  * 
  * The simplest way to test is to just print them, as is done in this example.
  */
 
 #define MAX_SIZE (4096)
+#define MAX_ENTRIES (32)
 
 // Example in heap memory (malloc()'d and free()'d).
 void example_heap(void *data, size_t len){
-	index_t *index = gitdex_alloc(data, len);
+	gitdex_t *index = gitdex_alloc(data, len);
 	gitdex_print_index(index);
 	gitdex_free(index);	
 }
 
 // Example entirely in stack memory.
+//   Since the number of entries is non-deterministic,
+//   we decide how many entries we can store (MAX_ENTRIES)
+//   and assign an appropriate buffer to the index.entries pointer.
 void example_stack(void *data, size_t len){
-	index_t  index;
-	header_t header;
-	entry_t  entries[32];
-
-	index.header  = &header;
-	index.entries = entries;
+	gitdex_t  index;
+	char buffer[sizeof(gitdex_entry_t) * MAX_ENTRIES];
+	
+	index.entries = buffer;
 	
 	gitdex_read_index(&index, data, len);
 	gitdex_print_index(&index);
 }
 
-int main(int argc, char **argv){
+void print_index(char *filename){
 	size_t len;
 	unsigned char data[MAX_SIZE];
-	char *filename;
 	
-	if(argc > 1)
-		filename = argv[1];
-	else
-		filename = ".git/index";
-
 	// Reads a file to a buffer
 	if( !(len=file_buffer(filename, data, MAX_SIZE)) )
-		die("failed to open file");
+		die("error: file not found");
 
-	// Each example reads from the buffer into an `index_t` and prints it.
-	//example_stack(data, len);
-	example_heap(data, len);
+	if( gitdex_check(data) ){
+		example_stack(data, len);
+		//example_heap(data, len);
+	}else{
+		die("error: not a git index file");
+	}
+}
+
+int main(int argc, char **argv){
+
+	if(argc == 2)
+		print_index(argv[1]);
+	else
+		printf("%s", 
+			"usage: demo <filename>\n\n"
+			"try doing `./demo .git/index` in a git directory.\n"
+		);
 
 	return 0;
 }
