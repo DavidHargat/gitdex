@@ -28,50 +28,49 @@ gitdex_free(index);
 
 ## functions
 
-`gitdex_t *gitdex_alloc(void *src, size_t size);`
+### `gitdex_t *gitdex_alloc(void *src, size_t size);`
 
 Will take a file buffer stored at `src`, of length `size` (in bytes) and return a pointer to parsed gitdex structure.
 
 
-`void gitdex_free(gitdex_t *index);`
+### `void gitdex_free(gitdex_t *index);`
 
 Free's the memory allocated by `gitdex_alloc`.
 
 
-`size_t gitdex_read_index(gitdex_t *dest, void *src, size_t size);`
+### `size_t gitdex_read_index(gitdex_t *dest, void *src, size_t size);`
 
 Parses a file buffer `src` of length `size` into a structure at `dest`.
 
 Returns the size of the index (the size of the header plus the total size of all the entries as they were store in the original buffer).
 
-`size_t gitdex_read_header(gitdex_header_t *dest, void *src);`
+### `size_t gitdex_read_header(gitdex_header_t *dest, void *src);`
 
 Parses a file buffer `src` into a structure at `dest`.
 
 Returns the length of the header (alwayas 12 bytes).
 
 
-`size_t gitdex_read_entry(gitdex_entry_t *dest, void *src);`
+### `size_t gitdex_read_entry(gitdex_entry_t *dest, void *src);`
 
 Parses an entry at `src` into a structure at `dest`.
 
 Returns the length of the entry.
 
 
-`int gitdex_check(void *src);`
+### `int gitdex_check(void *src);`
 
 Checks to see if a file buffer at `src` has a valid file signature.
 
 Returns 1 or 0 if the file is valid or not respectively.
 
+### printing
 
 ```
 void gitdex_print_index(gitdex_t *index)
 void gitdex_print_entry(gitdex_entry_t *entry)
 void gitdex_print_header(gitdex_header_t *header)
 ```
-
-Will pretty print parsed structures.
 
 ## types
 
