@@ -5,34 +5,34 @@
 #include "util.h"
 
 /* This is a demo of gitdex.h which shows how the 
- * interface works, and how you can work on either
- * the stack or heap.
+ * interface works.
  *
- * (util.h is simply a utility for reading files, it
+ * (note: util.h is simply a utility for reading files, it
  * does NOT have to be included with gitdex.h)
  *
  * With gitdex you can use either gitdex_alloc(src, size) or 
- * gitdex_read_index(src, size).
- *   `src`  is a buffer of raw data, containing your index file.
- *   `size` is a file length.
+ * gitdex_read_index(src, size) depending on how you'd
+ * like to allocate memory (heap or stack respectively).
  *
  * In either case gitdex will parse your buffered file into a struct
  * defined as gitdex_t where you will have access to the header and entries.
  * 
  * The simplest way to test is to just print them, as is done in this example.
+ * You can of course access the individual fields of each entry, for example: 
+ * `index->entries[0].name` will give you the file name of the first entry.
  */
 
 #define MAX_SIZE (4096)
 #define MAX_ENTRIES (32)
 
-// Example in heap memory (malloc()'d and free()'d).
+// Example on the heap (malloc()'d and free()'d).
 void example_heap(void *data, size_t len){
 	gitdex_t *index = gitdex_alloc(data, len);
 	gitdex_print_index(index);
 	gitdex_free(index);	
 }
 
-// Example entirely in stack memory.
+// Example on the stack.
 //   Since the number of entries is non-deterministic,
 //   we decide how many entries we can store (MAX_ENTRIES)
 //   and assign an appropriate buffer to the index.entries pointer.
